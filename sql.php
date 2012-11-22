@@ -9,10 +9,10 @@ function SQL($Query)
 	$args = func_get_args ();
 	array_unshift ( $args, $DB );
 	if (get_class ( $DB ) == "PDO")
-		return call_user_array_func ( SQL_pdo, $args );
+		return call_user_func_array ( SQL_pdo, $args );
 	else 
 		if (get_class ( $DB ) == "mysqli")
-			return call_user_array_func ( SQL_mysqli, $args );
+			return call_user_func_array ( SQL_mysqli, $args );
 		else
 			throw new Exception ( "Unknown database interface type." );
 }
