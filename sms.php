@@ -181,36 +181,50 @@ class SmsStatus
 	static $NotTC = 16;
 }
 
-
+/**
+ * 
+ * Extended SMS Center class
+ * relies on a database to handle sent and receive messages
+ * @author abiusx
+ * @version 1.1
+ */
 class SmsCenterExtended extends SmsCenter
 {
 	public $TablePrefix = "sms_";
 	
 	function SetupDB()
 	{
-		$this->sqlFunction ( "CREATE TABLE  `{$this->TablePrefix}send` (
-			`ID` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-			`SMSID` INT NOT NULL ,
-			`Status` INT NOT NULL ,
-			`Timestamp` INT NOT NULL ,
-			`To` VARCHAR( 32 ) NOT NULL ,
-			`Body` VARCHAR( 2048 ) NOT NULL ,
-			`From` VARCHAR( 32 ) NOT NULL
-			) " );
-		$this->sqlFunction ( "CREATE TABLE  `{$this->TablePrefix}receive` (
-			`ID` INT NOT NULL AUTO_INCREMENT PRIMARY KEY ,
-			`From` VARCHAR( 32 ) NOT NULL ,
-			`To` VARCHAR( 32 ) NOT NULL ,
-			`SMSID` INT NOT NULL ,
-			`Body` VARCHAR( 2048 ) NOT NULL ,
-			`Timestamp` INT NOT NULL
+		$this->sql ( "CREATE TABLE IF NOT EXISTS `{$this->TablePrefix}receive` (
+			  `ID` int(11) NOT NULL AUTO_INCREMENT,
+			  `From` varchar(32) COLLATE utf8_bin NOT NULL,
+			  `To` varchar(32) COLLATE utf8_bin NOT NULL,
+			  `SMSID` varchar(32) COLLATE utf8_bin NOT NULL,
+			  `Body` varchar(2048) COLLATE utf8_bin NOT NULL,
+			  `Timestamp` int(11) NOT NULL,
+			  PRIMARY KEY (`ID`),
+			  UNIQUE KEY `SMSID` (`SMSID`),
+			  KEY `From` (`From`),
+			  KEY `Timestamp` (`Timestamp`)
+				) " );
+		$this->sql ( "CREATE TABLE IF NOT EXISTS `{$this->TablePrefix}send` (
+			  `ID` int(11) NOT NULL AUTO_INCREMENT,
+			  `SMSID` varchar(32) COLLATE utf8_bin NOT NULL,
+			  `Status` int(11) NOT NULL,
+			  `Timestamp` int(11) NOT NULL,
+			  `To` varchar(32) COLLATE utf8_bin NOT NULL,
+			  `Body` varchar(2048) COLLATE utf8_bin NOT NULL,
+			  `From` varchar(32) COLLATE utf8_bin NOT NULL,
+			  PRIMARY KEY (`ID`),
+			  UNIQUE KEY `SMSID` (`SMSID`),
+			  KEY `Timestamp` (`Timestamp`),
+			  KEY `To` (`To`)
 			) " );
 	}
 	
-	function sql($Query)
+	protected function sql($Query)
 	{
 		$args = func_get_args ();
-		call_user_func_array ( $this->sqlFunction, $args );
+		return call_user_func_array ( $this->sqlFunction, $args );
 	}
 	protected $sqlFunction = null;
 	/**
@@ -230,6 +244,8 @@ class SmsCenterExtended extends SmsCenter
 		$this->sqlFunction = $sqlFunction;
 		if (! is_callable ( $this->sqlFunction ))
 			throw new Exception ( "Invalid SQL callback" );
+
+		$this->SetupDB();
 	}
 	function GetStatus($SMSID)
 	{
@@ -269,3 +285,9 @@ class SmsCenterExtended extends SmsCenter
 
 }
 
+require_once 'sql.php';
+
+$sce = new SmsCenterExtended ( "etebaran", "AIB16BR6p3LyXGB", "30009900662013", 'SQL' );
+//$sce->Send("6059530452", "About that");
+//echo $sce->GetStatus ( "6059453020" );
+var_dump($sce->ReceiveAll());
