@@ -85,7 +85,7 @@ function SQL_mysqli($DB, $Query)
 		if ($type == "INSERT")
 			return $DB->insert_id ;
 		elseif ($type == "DELETE" or $type == "UPDATE" or $type == "REPLAC")
-			return $DB->affected_rows ();
+			return $DB->affected_rows;
 		elseif ($type == "SELECT")
 		{
 			//fetching all results in a 2D array
