@@ -94,7 +94,7 @@ function SQL_mysqli($DB, $Query)
 			$fields = array ();
 			if (! $metadata)
 				return null;
-			while ( null != ($field = $DB->fetch_field ( $metadata )) )
+			while ( null != ($field = $metadata->fetch_field ()) )
 				$fields [] = &$out [$field->name];
 			call_user_func_array ( array ($preparedStatement, "bind_result" ), $fields );
 			$output = array ();
