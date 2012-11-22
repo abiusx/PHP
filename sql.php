@@ -82,7 +82,7 @@ function SQL_mysqli($DB, $Query)
 		$preparedStatement->execute ();
 		$type = substr ( trim ( strtoupper ( $Query ) ), 0, 6 );
 		if ($type == "INSERT")
-			return $DB->insert_id ();
+			return $DB->$insert_id ;
 		elseif ($type == "DELETE" or $type == "UPDATE" or $type == "REPLAC")
 			return $DB->affected_rows ();
 		elseif ($type == "SELECT")
