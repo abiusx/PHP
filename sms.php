@@ -269,7 +269,7 @@ class SmsCenterExtended extends SmsCenter
 		{
 			$IID = $this->sql ( "INSERT INTO {$this->TablePrefix}send (SMSID,Status,Timestamp,`To`,Body,`From`) VALUES
 				(?,?,?,?,?,?)", $r, parent::GetStatus ( $r ), time (), $To, $Content, $this->Number );
-			return $IID;
+			return $r;
 		}
 		else
 			return $r;
@@ -288,6 +288,9 @@ class SmsCenterExtended extends SmsCenter
 require_once 'sql.php';
 
 $sce = new SmsCenterExtended ( "etebaran", "AIB16BR6p3LyXGB", "30009900662013", 'SQL' );
-//$sce->Send("6059530452", "About that");
+var_dump(
+$sce->Send("09379704524", "salam vahid. baba behem zang zad goft gharare beri masjed. montazeram zang bezani. mesle diruzam zood ghat' nakon. ghashang 3 4 bar tulani gushi ro negah dar. boos")
+);
 //echo $sce->GetStatus ( "6059453020" );
+//$sce->GetStatus(6060351050);
 var_dump($sce->ReceiveAll());
