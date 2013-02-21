@@ -3,18 +3,29 @@ $DB = new mysqli ( "localhost", "root", "", "jf3" );
 if (mysqli_connect_errno ())
 	trigger_error ( "Unable to connect to MySQLi database." );
 $DB->set_charset ( 'UTF-8' );
-function SQL($Query)
+
+/**
+ * The xSQL function is supposed to run a SQL query and return the appropriate results.
+ * For select, it returns 2D associative arrays
+ * For UPDATE and DELETE it returns affectedRows
+ * For INSERT it returns LastInsertID, if no auto-increment found affectedRows is returned
+ * 
+ * The query should be in format "SELECT * FROM table WHERE Title=?",$Title
+ * @param string $Query
+ * @throws Exception if no database interface found.
+ */
+function xSQL($Query)
 {
 	global $DB;
 	$args = func_get_args ();
 	array_unshift ( $args, $DB );
 	if (get_class ( $DB ) == "PDO")
 		return call_user_func_array ( SQL_pdo, $args );
-	else 
+	else
 		if (get_class ( $DB ) == "mysqli")
-			return call_user_func_array ( SQL_mysqli, $args );
-		else
-			throw new Exception ( "Unknown database interface type." );
+		return call_user_func_array ( SQL_mysqli, $args );
+	else
+		throw new Exception ( "Unknown database interface type." );
 }
 function SQL_pdo($DB, $Query)
 {
@@ -41,14 +52,19 @@ function SQL_pdo($DB, $Query)
 		foreach ( $args as &$v )
 			$stmt->bindValue ( ++ $i, $v );
 		$stmt->execute ();
-		
+
 		$type = substr ( trim ( strtoupper ( $Query ) ), 0, 6 );
 		if ($type == "INSERT")
-			return $DB->lastInsertId();
+		{
+			$res=$DB->lastInsertId();
+			if ($res==0)
+				return $DB->rowCount();
+			return $res;
+		}
 		elseif ($type == "DELETE" or $type == "UPDATE" or $type == "REPLAC")
-			return $DB->affected_rows ();
+		return $DB->rowCount ();
 		elseif ($type == "SELECT")
-			return $stmt->fetchAll ( PDO::FETCH_ASSOC );
+		return $stmt->fetchAll ( PDO::FETCH_ASSOC );
 	}
 }
 
@@ -80,12 +96,17 @@ function SQL_mysqli($DB, $Query)
 		array_unshift ( $a, $types );
 		call_user_func_array ( array ($preparedStatement, 'bind_param' ), $a );
 		$preparedStatement->execute ();
-		
+
 		$type = substr ( trim ( strtoupper ( $Query ) ), 0, 6 );
 		if ($type == "INSERT")
-			return $DB->insert_id ;
+		{
+			$res=$DB->insert_id ;
+			if ($res==0)
+				return $DB->affected_rows;
+			return $res;
+		}
 		elseif ($type == "DELETE" or $type == "UPDATE" or $type == "REPLAC")
-			return $DB->affected_rows;
+		return $DB->affected_rows;
 		elseif ($type == "SELECT")
 		{
 			//fetching all results in a 2D array
