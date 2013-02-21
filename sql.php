@@ -19,7 +19,6 @@ class xSQL
 	static function SQL($Query)
 	{
 		$args = func_get_args ();
-		array_unshift ( $args, self::$DB );
 		if (get_class ( self::$DB ) == "PDO")
 			return call_user_func_array ( "self::SQL_pdo", $args );
 		else 
@@ -28,13 +27,12 @@ class xSQL
 			else
 				throw new Exception ( "Unknown database interface type." );
 	}
-	function SQL_pdo($DB, $Query)
+	function SQL_pdo($Query)
 	{
 		$args = func_get_args ();
-		array_shift ( $args ); // $DB
 		if (count ( $args ) == 1)
 		{
-			$result = $DB->query ( $Query );
+			$result = self::$DB->query ( $Query );
 			if ($result->rowCount ())
 			{
 				return $result->fetchAll ( PDO::FETCH_ASSOC );
@@ -43,9 +41,9 @@ class xSQL
 		}
 		else
 		{
-			if (! $stmt = $DB->prepare ( $Query ))
+			if (! $stmt = self::$DB->prepare ( $Query ))
 			{
-				$Error = $DB->errorInfo ();
+				$Error = self::$DB->errorInfo ();
 				trigger_error ( "Unable to prepare statement: {$Query}, reason: {$Error[2]}" );
 			}
 			array_shift ( $args ); // remove $Query from args
@@ -57,24 +55,23 @@ class xSQL
 			$type = substr ( trim ( strtoupper ( $Query ) ), 0, 6 );
 			if ($type == "INSERT")
 			{
-				$res = $DB->lastInsertId ();
+				$res = self::$DB->lastInsertId ();
 				if ($res == 0)
-					return $DB->rowCount ();
+					return self::$DB->rowCount ();
 				return $res;
 			}
 			elseif ($type == "DELETE" or $type == "UPDATE" or $type == "REPLAC")
-				return $DB->rowCount ();
+				return self::$DB->rowCount ();
 			elseif ($type == "SELECT")
 				return $stmt->fetchAll ( PDO::FETCH_ASSOC );
 		}
 	}
-	function SQL_mysqli($DB, $Query)
+	function SQL_mysqli( $Query)
 	{
 		$args = func_get_args ();
-		array_shift ( $args ); // $DB
 		if (count ( $args ) == 1)
 		{
-			$result = $DB->query ( $Query );
+			$result = self::$DB->query ( $Query );
 			if ($result->num_rows)
 			{
 				$out = array ();
@@ -86,8 +83,8 @@ class xSQL
 		}
 		else
 		{
-			if (! $preparedStatement = $DB->prepare ( $Query ))
-				trigger_error ( "Unable to prepare statement: {$Query}, reason: {$DB->error}" );
+			if (! $preparedStatement = self::$DB->prepare ( $Query ))
+				trigger_error ( "Unable to prepare statement: {$Query}, reason: {self::$DB->error}" );
 			array_shift ( $args ); // remove $Query from args
 			$a = array ();
 			foreach ( $args as $k => &$v )
@@ -103,13 +100,13 @@ class xSQL
 			$type = substr ( trim ( strtoupper ( $Query ) ), 0, 6 );
 			if ($type == "INSERT")
 			{
-				$res = $DB->insert_id;
+				$res = self::$DB->insert_id;
 				if ($res == 0)
-					return $DB->affected_rows;
+					return self::$DB->affected_rows;
 				return $res;
 			}
 			elseif ($type == "DELETE" or $type == "UPDATE" or $type == "REPLAC")
-				return $DB->affected_rows;
+				return self::$DB->affected_rows;
 			elseif ($type == "SELECT")
 			{
 				// fetching all results in a 2D array
