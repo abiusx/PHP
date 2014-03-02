@@ -112,6 +112,9 @@ class ProxyHandler
 	}
 }
 
-
-$proxy = new ProxyHandler('http://localhost/tst/proxy','http://abiusx.com');
+if (isset($_SERVER["HTTPS"]) && $_SERVER['HTTPS'])
+	$protocol="https";
+else
+	$protocol="http";
+$proxy = new ProxyHandler("{$protocol}://localhost/tst/proxy","{$protocol}://abiusx.com");
 $proxy->execute();
