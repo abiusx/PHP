@@ -38,6 +38,9 @@ class ProxyHandler
 		$this->setCurlOption(CURLOPT_BINARYTRANSFER, true); // For images, etc.
 		$this->setCurlOption(CURLOPT_USERAGENT,$_SERVER['HTTP_USER_AGENT']);
 		$this->setCurlOption(CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0 );
+		$this->setCurlOption(CURLOPT_HEADER, true );
+		$this->setCurlOption(CURLOPT_SSL_VERIFYPEER, false );
+		$this->setCurlOption(CURLOPT_SSL_VERIFYHOST, 0 );
 		$this->setCurlOption(CURLOPT_WRITEFUNCTION, array($this,'readResponse'));
 		$this->setCurlOption(CURLOPT_HEADERFUNCTION, array($this,'readHeaders'));
 		// Process post data.
@@ -69,7 +72,8 @@ class ProxyHandler
 	// Executes the proxy.
 	public function execute()
 	{
-		curl_exec($this->curl_handler);
+		if (!curl_exec($this->curl_handler))
+			die(curl_error($this->curl_handler));
 	}
 
 	// Get the information about the request.
