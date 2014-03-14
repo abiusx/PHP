@@ -1,4 +1,5 @@
 RewriteEngine On
+#RewriteBase /~an2wm/
 RewriteCond %{REQUEST_FILENAME} !-f [NC]
 RewriteCond %{REQUEST_FILENAME} !-d [NC]
 RewriteCond %{REQUEST_URI} !^/index.php

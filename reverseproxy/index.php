@@ -5,12 +5,14 @@ class ProxyHandler
 	private $translated_url;
 	private $curl_handler;
 
+	private $cacheResponse=false;
+	private $body="";
+	private $header="";
 	function __construct($url, $proxy_url)
 	{
-		session_start();
+
 		$this->url = $url;
 		$this->proxy_url = $proxy_url;
-
 		// Parse all the parameters for the URL
 		if (isset($_SERVER['PATH_INFO']))
 		{
@@ -27,7 +29,9 @@ class ProxyHandler
 		}
 
 		$this->translated_url = $proxy_url;
+		if ($this->checkCache()) return;
 
+		session_start();
 		$this->curl_handler = curl_init($proxy_url);
 
 		// Set various options
@@ -66,14 +70,23 @@ class ProxyHandler
 			// Set the request method
 			$this->setCurlOption(CURLOPT_CUSTOMREQUEST, $_SERVER['REQUEST_METHOD']);
 		}
-
 	}
 
 	// Executes the proxy.
 	public function execute()
 	{
+		if ($this->cacheResponse) 
+		{
+			$headers=explode(PHP_EOL, $this->header);
+			if(is_array($headers))
+				foreach ($headers as $header)
+					header($header);
+			echo $this->body;
+			return true;
+		}
 		if (!curl_exec($this->curl_handler))
 			die(curl_error($this->curl_handler));
+		return true;
 	}
 
 	// Get the information about the request.
@@ -96,6 +109,7 @@ class ProxyHandler
 		{
 			$string = str_replace($this->proxy_url, $this->url, $string);
 		}
+		$this->header.=$string;
 		header($string);
 		return $length;
 	}
@@ -111,8 +125,51 @@ class ProxyHandler
 // 			$insertPos=strpos($string,">",$headPos+4)+1;
 // 			$string=substr($string,0,$insertPos)."\n<base href='{$this->url}'>".substr($string,$insertPos+1);
 // 		}
+		$this->body.=$string;
 		echo $string;
 		return $length;
+	}
+	function __destruct()
+	{
+		$this->storeCache();
+	}
+	public $cacheValidityTime=86400; //one day
+	protected function checkCache()
+	{
+		$cacheFolder=__DIR__."/cache";
+		$filename=md5($this->translated_url);	
+		$file=$cacheFolder."/".$filename.".txt";
+		if (file_exists($file))
+		{
+			if (filemtime($file)<time()-$this->cacheValidityTime) return false;
+			$content=file_get_contents($file);
+			$breakpoint=strpos($content, PHP_EOL.PHP_EOL);
+			$this->header=substr($content,0,$breakpoint);
+			$this->body=substr($content,$breakpoint+2);
+			$this->cacheResponse=true;
+			return true;
+
+		}
+		$this->cacheResponse=false;
+		return false;
+	}
+	protected function storeCache()
+	{
+		if ($this->cacheResponse) return; //served from cache;
+		$cacheFolder=__DIR__."/cache";
+		if (!file_exists($cacheFolder))
+			@mkdir($cacheFolder,"0777");
+		if (is_dir($cacheFolder) && is_writable($cacheFolder))
+		{
+			$filename=md5($this->translated_url);
+			$file=$cacheFolder."/".$filename.".txt";
+			if (!file_exists($file)) 
+			{
+
+				file_put_contents($file, $this->header.PHP_EOL.$this->body);
+				die("stored cache for ".$this->proxy_url);
+			}
+		}
 	}
 }
 
@@ -120,5 +177,5 @@ if (isset($_SERVER["HTTPS"]) && $_SERVER['HTTPS'])
 	$protocol="https";
 else
 	$protocol="http";
-$proxy = new ProxyHandler("{$protocol}://localhost/tst/proxy","{$protocol}://abiusx.com");
+$proxy = new ProxyHandler("{$protocol}://localhost/PHP/reverseproxy","{$protocol}://abiusx.com");
 $proxy->execute();
