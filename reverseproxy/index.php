@@ -167,7 +167,6 @@ class ProxyHandler
 			{
 
 				file_put_contents($file, $this->header.PHP_EOL.$this->body);
-				die("stored cache for ".$this->proxy_url);
 			}
 		}
 	}
